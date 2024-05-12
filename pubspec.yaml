@@ -47,7 +47,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
   image_picker: ^1.1.1
-  flutter_gemini: ^2.0.3
+  google_generative_ai: ^0.4.0
   share_plus: ^9.0.0
   geolocator: ^11.0.0
   geocoding: ^2.0.4

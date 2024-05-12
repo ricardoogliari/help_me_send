@@ -1,12 +1,11 @@
-
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -72,9 +71,7 @@ class _HomePageState extends State<HomePage> {
     Share.share(_responseText);
   }
 
-  void _doMagic(BuildContext context) {
-    final gemini = Gemini.instance;
-
+  void _doMagic(BuildContext context) async {
     String environments = _environmentsController.text.isNotEmpty ? " ${_environmentsController.text} ambientes no total. " : "";
     String bathrooms = _bathroomsController.text.isNotEmpty ? "${_bathroomsController.text} banheiros. " : "";
     String bedrooms = _bedroomsController.text.isNotEmpty ? "${_bedroomsController.text} dormitórios. " : "";
@@ -96,32 +93,26 @@ class _HomePageState extends State<HomePage> {
         "Detalhes do imóvel: $environments$bathrooms$bedrooms$parkins$utilArea$totalArea$solarPositionText$floorText$elevator$newBuilding$furnished$semiFurnished."
         "Não fale sobre características do imóvel que não existam nas fotos enviadas.";
 
-    gemini.streamGenerateContent(
-        fullText,
-        images: _selectedFiles.map((file) => File(file.path).readAsBytesSync()).toList(),
-        generationConfig: GenerationConfig(
-          maxOutputTokens: 8192,
-          temperature: 0.1,
-        ),
-        safetySettings: [
-          SafetySetting(
-              category: SafetyCategory.harassment,
-              threshold: SafetyThreshold.blockMediumAndAbove),
-          SafetySetting(
-              category: SafetyCategory.dangerous,
-              threshold: SafetyThreshold.blockMediumAndAbove),
-          SafetySetting(
-              category: SafetyCategory.hateSpeech,
-              threshold: SafetyThreshold.blockMediumAndAbove),
-          SafetySetting(
-              category: SafetyCategory.sexuallyExplicit,
-              threshold: SafetyThreshold.blockMediumAndAbove)]
-    ).listen((value) {
-      setState(() {
-        _responseText = (_responseText + (value.output ?? "")).trim();
-      });
-    }).onError((e) {
+    const String API_KEY = String.fromEnvironment('API_KEY', defaultValue: 'https://default-api.example.com');
+    final _visionModel = GenerativeModel(
+      model: 'gemini-pro-vision',
+      apiKey: API_KEY,
+    );
+    final content = [
+      Content.multi([
+        TextPart(fullText),
+        if (_selectedFiles.isNotEmpty) DataPart('image/jpeg', File(_selectedFiles[0].path).readAsBytesSync()),
+        if (_selectedFiles.length > 1) DataPart('image/jpeg', File(_selectedFiles[1].path).readAsBytesSync()),
+        if (_selectedFiles.length > 2) DataPart('image/jpeg', File(_selectedFiles[2].path).readAsBytesSync()),
+        if (_selectedFiles.length > 3) DataPart('image/jpeg', File(_selectedFiles[3].path).readAsBytesSync()),
+        if (_selectedFiles.length > 4) DataPart('image/jpeg', File(_selectedFiles[4].path).readAsBytesSync()),
+        if (_selectedFiles.length > 4) DataPart('image/jpeg', File(_selectedFiles[5].path).readAsBytesSync())
+      ])
+    ];
 
+    var response = await _visionModel.generateContent(content);
+    setState(() {
+      _responseText = response.text ?? "";
     });
 
   }
