@@ -14,5 +14,5 @@ Permite o compartilhamento do conteúdo.
 Pacote para receber a localização geográfica do aparelho e, posteriormente, para recuperar o endereço do mesmo.
 
 ## Screenshots
-![Configuração das fotos do imóvel](https://github.com/ricardoogliari/help_me_send/blob/master/pictures.png)
+<img src="https://github.com/ricardoogliari/help_me_send/blob/master/pictures.png" alt="Seleção das fotos do imóvel" width="480" height="800">
 
