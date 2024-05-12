@@ -91,19 +91,17 @@ class _HomePageState extends State<HomePage> {
     String semiFurnished = _others[3] ? "Imóvel semi-mobiliado. " : "";
 
     String fullText = "Você é um corretor. "
-        "Analise as imagens e os dados de detalhe do imóvel para criar um texto de dois parágrafos, que serão usados como propaganda do imóvel. "
+        "Analise as imagens e os dados de detalhe do imóvel para criar um texto de um parágrafo, que será usados como propaganda do imóvel. "
         "O endereço do imóvel é ${placemark.thoroughfare}, ${placemark.subThoroughfare}, ${placemark.subLocality}, ${placemark.subAdministrativeArea}. "
         "Detalhes do imóvel: $environments$bathrooms$bedrooms$parkins$utilArea$totalArea$solarPositionText$floorText$elevator$newBuilding$furnished$semiFurnished."
-        "Não invente carasterísticas do imóvel que não foram passadas para você, como dependência de empregada, área de serviço.";
+        "Não fale sobre características do imóvel que não existam nas fotos enviadas.";
 
     gemini.streamGenerateContent(
         fullText,
         images: _selectedFiles.map((file) => File(file.path).readAsBytesSync()).toList(),
         generationConfig: GenerationConfig(
           maxOutputTokens: 8192,
-          temperature: 0.25,
-          topP: 0.95,
-          topK: 0
+          temperature: 0.1,
         ),
         safetySettings: [
           SafetySetting(

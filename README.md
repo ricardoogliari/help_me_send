@@ -1,16 +1,17 @@
 # help_me_send
 
-An application created to help sellers.
+Uma aplicação que auxiliar corretores, criando um texto descritivo do imóvel para compartilhamento nas redes sociais. 
 
-## Getting Started
+## Pacotes Utilizados
 
-This project is a starting point for a Flutter application.
+### image_picker
+Para escolha da imagem da câmera ou da galeria.
+### flutter_gemini
+Permite a utilização da IA Generativa do Google, a Gemini.
+### share_plus
+Permite o compartilhamento do conteúdo.
+### geolocator e geocoding
+Pacote para receber a localização geográfica do aparelho e, posteriormente, para recuperar o endereço do mesmo.
 
-A few resources to get you started if this is your first Flutter project:
+## Screenshots
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
