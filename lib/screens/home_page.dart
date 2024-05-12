@@ -28,26 +28,26 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _totalAreaController = TextEditingController();
 
   final List<XFile> _selectedFiles = [];
-  final List<bool> _solarPosition =[
+  final List<bool> _solarPosition = [
     false, false, false, false
   ];
-  final List<String> _solarPositionOptions =[
+  final List<String> _solarPositionOptions = [
     'Norte', 'Sul', 'Leste', 'Oeste'
   ];
-  final List<bool> _floor =[
+  final List<bool> _floor = [
     false, false, false
   ];
-  final List<String> _floorOptions =[
+  final List<String> _floorOptions = [
     'Andar Baixo', 'Andar Médio', 'Andar Alto'
   ];
-  final List<bool> _others =[
+  final List<bool> _others = [
     false, false, false, false
   ];
-  final List<String> _othersOptions =[
+  final List<String> _othersOptions = [
     'Elevador', 'Novo', 'Mobiliado', 'Semimobiliado'
   ];
 
-  void _selectPhotos(bool newPhoto) async{
+  void _selectPhotos(bool newPhoto) async {
     final ImagePicker _picker = ImagePicker();
     XFile? photo;
     late List<XFile> images;
@@ -68,7 +68,7 @@ class _HomePageState extends State<HomePage> {
 
   }
 
-  void _share(){
+  void _share() {
     Share.share(_responseText);
   }
 
@@ -224,7 +224,9 @@ class _HomePageState extends State<HomePage> {
                                 children: [
                                   Expanded(
                                     child: TextFormField(
+                                      textInputAction: TextInputAction.next,
                                       controller: _environmentsController,
+                                      keyboardType: TextInputType.number,
                                       decoration: const InputDecoration(
                                         labelText: 'Ambientes Totais',
                                         border: OutlineInputBorder(),
@@ -234,6 +236,8 @@ class _HomePageState extends State<HomePage> {
                                   const SizedBox(width: 12,),
                                   Expanded(
                                     child: TextFormField(
+                                      textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.number,
                                       controller: _bathroomsController,
                                       decoration: const InputDecoration(
                                         labelText: 'Banheiros',
@@ -248,6 +252,8 @@ class _HomePageState extends State<HomePage> {
                                 children: [
                                   Expanded(
                                     child: TextFormField(
+                                      textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.number,
                                       controller: _bedroomsController,
                                       decoration: const InputDecoration(
                                         labelText: 'Dormitórios',
@@ -258,6 +264,8 @@ class _HomePageState extends State<HomePage> {
                                   const SizedBox(width: 12,),
                                   Expanded(
                                     child: TextFormField(
+                                      textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.number,
                                       controller: _parkingsController,
                                       decoration: const InputDecoration(
                                         labelText: 'Vagas Estacionamento',
@@ -272,6 +280,8 @@ class _HomePageState extends State<HomePage> {
                                 children: [
                                   Expanded(
                                     child: TextFormField(
+                                      textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.number,
                                       controller: _utilAreaController,
                                       decoration: const InputDecoration(
                                         labelText: 'Área Útil',
@@ -282,6 +292,8 @@ class _HomePageState extends State<HomePage> {
                                   const SizedBox(width: 12,),
                                   Expanded(
                                     child: TextFormField(
+                                      textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.number,
                                       controller: _totalAreaController,
                                       decoration: const InputDecoration(
                                         labelText: 'Área Total',
