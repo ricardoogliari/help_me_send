@@ -1,11 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:help_me_send/controllers/address_controller.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:help_me_send/controllers/gemini_controller.dart';
+import 'package:help_me_send/widgets/containers_photo.dart';
+import 'package:help_me_send/widgets/floor_choice.dart';
+import 'package:help_me_send/widgets/other_choice.dart';
+import 'package:help_me_send/widgets/solar_choice.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,7 +21,8 @@ class _HomePageState extends State<HomePage> {
   String _responseText = "";
   bool _running = false;
 
-  late Placemark placemark;
+  final AddressController _addressController = AddressController();
+  final GeminiController _geminiController = GeminiController();
 
   final TextEditingController _environmentsController = TextEditingController();
   final TextEditingController _bathroomsController = TextEditingController();
@@ -25,130 +30,6 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _parkingsController = TextEditingController();
   final TextEditingController _utilAreaController = TextEditingController();
   final TextEditingController _totalAreaController = TextEditingController();
-
-  final List<XFile> _selectedFiles = [];
-  final List<bool> _solarPosition = [
-    false, false, false, false
-  ];
-  final List<String> _solarPositionOptions = [
-    'Norte', 'Sul', 'Leste', 'Oeste'
-  ];
-  final List<bool> _floor = [
-    false, false, false
-  ];
-  final List<String> _floorOptions = [
-    'Andar Baixo', 'Andar Médio', 'Andar Alto'
-  ];
-  final List<bool> _others = [
-    false, false, false, false
-  ];
-  final List<String> _othersOptions = [
-    'Elevador', 'Novo', 'Mobiliado', 'Semimobiliado'
-  ];
-
-  void _selectPhotos(bool newPhoto) async {
-    final ImagePicker _picker = ImagePicker();
-    XFile? photo;
-    late List<XFile> images;
-
-    if (newPhoto){
-      photo = await _picker.pickImage(source: ImageSource.camera);
-    } else {
-      images = await _picker.pickMultiImage();
-    }
-
-    setState(() {
-      if (photo?.path != null){
-        _selectedFiles.add(photo!);
-      } else if (images.isNotEmpty){
-        _selectedFiles.addAll(images);
-      }
-    });
-
-  }
-
-  void _share() {
-    Share.share(_responseText);
-  }
-
-  void _doMagic(BuildContext context) async {
-    String environments = _environmentsController.text.isNotEmpty ? " ${_environmentsController.text} ambientes no total. " : "";
-    String bathrooms = _bathroomsController.text.isNotEmpty ? "${_bathroomsController.text} banheiros. " : "";
-    String bedrooms = _bedroomsController.text.isNotEmpty ? "${_bedroomsController.text} dormitórios. " : "";
-    String parkins = _parkingsController.text.isNotEmpty ? "${_parkingsController.text} vagas de estacionamento. " : "";
-    String utilArea = _utilAreaController.text.isNotEmpty ? "Área Ùtil de ${_utilAreaController.text} M². " : "";
-    String totalArea = _totalAreaController.text.isNotEmpty ? "Área Total de ${_totalAreaController.text} M². " : "";
-    int solarPosition = _solarPosition.indexOf(true);
-    String solarPositionText = solarPosition >= 0 ? "${_solarPositionOptions[solarPosition]}. " : "";
-    int floorPosition = _floor.indexOf(true);
-    String floorText = floorPosition >= 0 ? "${_floorOptions[floorPosition]}. " : "";
-    String elevator = _others[0] ? "Tem elevador. " : "";
-    String newBuilding = _others[1] ? "Imóvel novo. " : "";
-    String furnished = _others[2] ? "Imóvel mobiliado. " : "";
-    String semiFurnished = _others[3] ? "Imóvel semi-mobiliado. " : "";
-
-    String fullText = "Você é um corretor. "
-        "Analise as imagens e os dados de detalhe do imóvel para criar um texto de um parágrafo, que será usados como propaganda do imóvel. "
-        "O endereço do imóvel é ${placemark.thoroughfare}, ${placemark.subThoroughfare}, ${placemark.subLocality}, ${placemark.subAdministrativeArea}. "
-        "Detalhes do imóvel: $environments$bathrooms$bedrooms$parkins$utilArea$totalArea$solarPositionText$floorText$elevator$newBuilding$furnished$semiFurnished."
-        "Não fale sobre características do imóvel que não existam nas fotos enviadas.";
-
-    const String API_KEY = String.fromEnvironment('API_KEY', defaultValue: 'https://default-api.example.com');
-    final _visionModel = GenerativeModel(
-      model: 'gemini-pro-vision',
-      apiKey: API_KEY,
-    );
-    final content = [
-      Content.multi([
-        TextPart(fullText),
-        if (_selectedFiles.isNotEmpty) DataPart('image/jpeg', File(_selectedFiles[0].path).readAsBytesSync()),
-        if (_selectedFiles.length > 1) DataPart('image/jpeg', File(_selectedFiles[1].path).readAsBytesSync()),
-        if (_selectedFiles.length > 2) DataPart('image/jpeg', File(_selectedFiles[2].path).readAsBytesSync()),
-        if (_selectedFiles.length > 3) DataPart('image/jpeg', File(_selectedFiles[3].path).readAsBytesSync()),
-        if (_selectedFiles.length > 4) DataPart('image/jpeg', File(_selectedFiles[4].path).readAsBytesSync()),
-        if (_selectedFiles.length > 4) DataPart('image/jpeg', File(_selectedFiles[5].path).readAsBytesSync())
-      ])
-    ];
-
-    var response = await _visionModel.generateContent(content);
-    setState(() {
-      _responseText = response.text ?? "";
-    });
-
-  }
-
-  void _determinePosition(BuildContext context) async {
-    setState(() {
-      _responseText = "";
-      _running = true;
-    });
-
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    Position position = await Geolocator.getCurrentPosition();
-    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-    placemark = placemarks[0];
-    _doMagic(context);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -178,12 +59,12 @@ class _HomePageState extends State<HomePage> {
                                 mainAxisSpacing: 10,
                                 crossAxisCount: 2,
                                 children: <Widget>[
-                                  _selectedFiles.isNotEmpty ? _makeContainerWithPhoto(0) : _makeContainerWithoutPhoto(),
-                                  _selectedFiles.length > 1 ? _makeContainerWithPhoto(1) : _makeContainerWithoutPhoto(),
-                                  _selectedFiles.length > 2 ? _makeContainerWithPhoto(2) : _makeContainerWithoutPhoto(),
-                                  _selectedFiles.length > 3 ? _makeContainerWithPhoto(3) : _makeContainerWithoutPhoto(),
-                                  _selectedFiles.length > 4 ? _makeContainerWithPhoto(4) : _makeContainerWithoutPhoto(),
-                                  _selectedFiles.length > 5 ? _makeContainerWithPhoto(5) : _makeContainerWithoutPhoto()
+                                  _makeContainer(0),
+                                  _makeContainer(1),
+                                  _makeContainer(2),
+                                  _makeContainer(3),
+                                  _makeContainer(4),
+                                  _makeContainer(5)
                                 ],
                               ),
                               const SizedBox(height: 16,),
@@ -294,19 +175,26 @@ class _HomePageState extends State<HomePage> {
                               ),
                               const SizedBox(height: 16,),
                               const Text("Posição Solar"),
-                              _makeSolarChoices(),
+                              makeSolarChoices((){ setState(() {}); }),
                               const SizedBox(height: 16,),
                               const Divider(height: 1,),
                               const SizedBox(height: 16,),
-                              _makeFloorChoices(),
+                              makeFloorChoices((){ setState(() {}); }),
                               const SizedBox(height: 16,),
                               const Divider(height: 1,),
                               const SizedBox(height: 16,),
                               const Text("Outros"),
-                              _makeOtherChoices(),
+                              makeOtherChoices(() { setState(() { }); }),
                               const SizedBox(height: 16,),
                               ElevatedButton(
-                                  onPressed: () => _determinePosition(context),
+                                  onPressed: () async {
+                                    setState(() {
+                                      _responseText = "";
+                                      _running = true;
+                                    });
+                                    Placemark placemark = await _addressController.determinePosition();
+                                    _doMagic(context, placemark);
+                                  },
                                   child: const Text("Receber Sugestão"))
                             ],
                           )
@@ -342,90 +230,63 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+  
+  Widget _makeContainer(int index) => selectedFiles.length > index ? makeContainerWithPhoto(index, (){
+      setState(() {
+        selectedFiles.removeAt(index);
+      });
+    }) : makeContainerWithoutPhoto();
 
-  Widget _makeSolarChoices() => Wrap(
-    spacing: 12,
-    children: [
-      _makeItemSolarChoice(0),
-      _makeItemSolarChoice(1),
-      _makeItemSolarChoice(2),
-      _makeItemSolarChoice(3),
-    ],
-  );
+  void _selectPhotos(bool newPhoto) async {
+    final ImagePicker _picker = ImagePicker();
+    XFile? photo;
+    late List<XFile> images;
 
-  Widget _makeItemSolarChoice(int index) =>
-      ChoiceChip(
-        label: Text(_solarPositionOptions[index]),
-        selected: _solarPosition[index],
-        onSelected: (value) {
-          setState(() {
-            _solarPosition.fillRange(0, 4, false);
-            _solarPosition[index] = true;
-          });
-        },
-      );
+    if (newPhoto){
+      photo = await _picker.pickImage(source: ImageSource.camera);
+    } else {
+      images = await _picker.pickMultiImage();
+    }
 
-  Widget _makeFloorChoices() => Wrap(
-    spacing: 12,
-    children: [
-      _makeItemFloorChoice(0),
-      _makeItemFloorChoice(1),
-      _makeItemFloorChoice(2),
-    ],
-  );
+    setState(() {
+      if (photo?.path != null){
+        selectedFiles.add(photo!);
+      } else if (images.isNotEmpty){
+        selectedFiles.addAll(images);
+      }
+    });
 
-  Widget _makeItemFloorChoice(int index) =>
-      ChoiceChip(
-        label: Text(_floorOptions[index]),
-        selected: _floor[index],
-        onSelected: (value) {
-          setState(() {
-            _floor.fillRange(0, 3, false);
-            _floor[index] = true;
-          });
-        },
-      );
+  }
 
-  Widget _makeOtherChoices() => Wrap(
-    spacing: 12,
-    children: [
-      _makeItemOtherChoice(0),
-      _makeItemOtherChoice(1),
-      _makeItemOtherChoice(2),
-      _makeItemOtherChoice(3),
-    ],
-  );
+  void _share() {
+    Share.share(_responseText);
+  }
 
-  Widget _makeItemOtherChoice(int index) =>
-      ChoiceChip(
-        label: Text(_othersOptions[index]),
-        selected: _others[index],
-        onSelected: (value) {
-          if (index == 2 && value){
-            _others[3] = false;
-          } else if (index == 3 && value){
-            _others[2] = false;
-          }
+  void _doMagic(BuildContext context, Placemark placemark) async {
+    String environments = _environmentsController.text.isNotEmpty ? " ${_environmentsController.text} ambientes no total. " : "";
+    String bathrooms = _bathroomsController.text.isNotEmpty ? "${_bathroomsController.text} banheiros. " : "";
+    String bedrooms = _bedroomsController.text.isNotEmpty ? "${_bedroomsController.text} dormitórios. " : "";
+    String parkins = _parkingsController.text.isNotEmpty ? "${_parkingsController.text} vagas de estacionamento. " : "";
+    String utilArea = _utilAreaController.text.isNotEmpty ? "Área Ùtil de ${_utilAreaController.text} M². " : "";
+    String totalArea = _totalAreaController.text.isNotEmpty ? "Área Total de ${_totalAreaController.text} M². " : "";
+    int solarPosition = getSolarPosition();
+    String solarPositionText = solarPosition >= 0 ? "${solarPositionOptions[solarPosition]}. " : "";
+    int floorPosition = getFloorPosition();
+    String floorText = floorPosition >= 0 ? "${floorOptions[floorPosition]}. " : "";
+    String elevator = others[0] ? "Tem elevador. " : "";
+    String newBuilding = others[1] ? "Imóvel novo. " : "";
+    String furnished = others[2] ? "Imóvel mobiliado. " : "";
+    String semiFurnished = others[3] ? "Imóvel semi-mobiliado. " : "";
 
-          setState(() {
-            _others[index] = value;
-          });
-        },
-      );
+    String fullText = "Você é um corretor. "
+        "Analise as imagens e os dados de detalhe do imóvel para criar um texto de um parágrafo, que será usados como propaganda do imóvel. "
+        "O endereço do imóvel é ${placemark.thoroughfare}, ${placemark.subThoroughfare}, ${placemark.subLocality}, ${placemark.subAdministrativeArea}. "
+        "Detalhes do imóvel: $environments$bathrooms$bedrooms$parkins$utilArea$totalArea$solarPositionText$floorText$elevator$newBuilding$furnished$semiFurnished."
+        "Não fale sobre características do imóvel que não existam nas fotos enviadas.";
 
-  Widget _makeContainerWithPhoto(int index) => InkWell(
-      child: Image.file(File(
-          _selectedFiles[index].path),
-        fit: BoxFit.cover,),
-      onLongPress: () => setState(() {
-        _selectedFiles.removeAt(index);
-      })
-  );
-
-  Widget _makeContainerWithoutPhoto() => Container(
-    padding: const EdgeInsets.all(8),
-    color: Colors.teal[100],
-    child: const Text("Faça seu melhor"),
-  );
-
+    String response = await _geminiController.doMagic(context, fullText, selectedFiles);
+    setState(() {
+      _responseText = response;
+    });
+  }
 }
